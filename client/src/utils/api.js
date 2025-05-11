@@ -1,12 +1,17 @@
 import axios from 'axios';
 
+// Use environment variable with fallback to localhost
+// This will work with create-react-app's environment variable system
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
-  },
+    'Content-Type': 'application/json'
+  }
 });
 
+// Add a request interceptor to add the auth token to every request
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -15,7 +20,9 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error);
+  }
 );
 
 export default api;
