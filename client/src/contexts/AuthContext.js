@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api'; // import the axios instance
 
 export const AuthContext = createContext();
 
@@ -8,21 +8,16 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Load user if token exists
   useEffect(() => {
     const loadUser = async () => {
       const token = localStorage.getItem('token');
-      
       if (!token) {
         setLoading(false);
         return;
       }
 
       try {
-        // Set auth token in headers
-        setAuthToken(token);
-        
-        const res = await axios.get('http://localhost:5000/api/users/me');
+        const res = await api.get('/users/me');
         setUser(res.data);
         setIsAuthenticated(true);
       } catch (err) {
@@ -35,57 +30,40 @@ export const AuthProvider = ({ children }) => {
     loadUser();
   }, []);
 
-  // Register user
   const register = async (formData) => {
     try {
-      const res = await axios.post('http://localhost:5000/api/users/register', formData);
+      const res = await api.post('/users/register', formData);
       localStorage.setItem('token', res.data.token);
-      setAuthToken(res.data.token);
-      
-      // Load user data
-      const userRes = await axios.get('http://localhost:5000/api/users/me');
+
+      const userRes = await api.get('/users/me');
       setUser(userRes.data);
       setIsAuthenticated(true);
-      
+
       return true;
     } catch (err) {
-      return { error: err.response.data.msg };
+      return { error: err?.response?.data?.msg || 'Registration failed' };
     }
   };
 
-  // Login user
   const login = async (formData) => {
     try {
-      const res = await axios.post('http://localhost:5000/api/users/login', formData);
+      const res = await api.post('/users/login', formData);
       localStorage.setItem('token', res.data.token);
-      setAuthToken(res.data.token);
-      
-      // Load user data
-      const userRes = await axios.get('http://localhost:5000/api/users/me');
+
+      const userRes = await api.get('/users/me');
       setUser(userRes.data);
       setIsAuthenticated(true);
-      
+
       return true;
     } catch (err) {
-      return { error: err.response.data.msg };
+      return { error: err?.response?.data?.msg || 'Login failed' };
     }
   };
 
-  // Logout user
   const logout = () => {
     localStorage.removeItem('token');
-    setAuthToken();
     setUser(null);
     setIsAuthenticated(false);
-  };
-
-  // Set auth token in headers
-  const setAuthToken = (token) => {
-    if (token) {
-      axios.defaults.headers.common['x-auth-token'] = token;
-    } else {
-      delete axios.defaults.headers.common['x-auth-token'];
-    }
   };
 
   return (
